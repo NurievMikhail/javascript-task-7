@@ -15,30 +15,32 @@ function runParallel(jobs, parallelNum, timeout = 1000) {
             return resolve([]);
         }
 
-        let index = 0;
+        let counter = 0;
         let resultJobs = [];
-        const timeoutJobs = jobs.map(job =>
+        const emitFunction = (result) => (runJob(result, counter));
+        let timeoutJobs = jobs.map(job =>
             () => new Promise((jobResolve, jobReject) => {
                 job().then(jobResolve, jobReject);
                 setTimeout(() => (jobReject(new Error('Promise timeout'))), timeout);
             })
         );
-        const emitFunction = (result) => {
-            resultJobs[index] = result;
-            if (timeoutJobs.length > index) {
-                timeoutJobs[index]().then(emitFunction, emitFunction);
-                index++;
-            }
-            if (timeoutJobs.length === resultJobs.filter((a) => (a !== undefined)).length) {
-                resolve(resultJobs);
-            }
-        };
 
         timeoutJobs
             .slice(0, parallelNum)
             .forEach((job) => {
                 job().then(emitFunction, emitFunction);
-                index++;
+                counter++;
             });
+
+        function runJob(jobResult, index) {
+            resultJobs[index] = jobResult;
+            if (timeoutJobs.length > counter) {
+                timeoutJobs[counter]().then(emitFunction, emitFunction);
+                counter++;
+            }
+            if (timeoutJobs.length === resultJobs.filter((a) => (a !== undefined)).length) {
+                resolve(resultJobs);
+            }
+        }
     });
 }
