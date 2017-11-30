@@ -17,7 +17,6 @@ function runParallel(jobs, parallelNum, timeout = 1000) {
 
         let counter = 0;
         let resultJobs = [];
-        const emitFunction = (result) => (runJob(result, counter));
         let timeoutJobs = jobs.map(job =>
             () => new Promise((jobResolve, jobReject) => {
                 job().then(jobResolve, jobReject);
@@ -28,21 +27,24 @@ function runParallel(jobs, parallelNum, timeout = 1000) {
 
         timeoutJobs
             .slice(0, parallelNum)
-            .forEach((job) => {
-                job().then(emitFunction, emitFunction);
-                counter++;
-            });
+            .forEach((job) => createJob(job));
 
         function runJob(jobResult, index) {
             resultJobs[index] = jobResult;
             finish++;
             if (timeoutJobs.length > counter) {
-                timeoutJobs[counter]().then(emitFunction, emitFunction);
-                counter++;
+                createJob(jobs[counter]);
             }
             if (timeoutJobs.length === finish) {
                 resolve(resultJobs);
             }
+        }
+
+        function createJob(job) {
+            let index = counter;
+            counter++;
+            let emitFunction = (jobResult) => (runJob(jobResult, index));
+            job().then(emitFunction, emitFunction);
         }
     });
 }
