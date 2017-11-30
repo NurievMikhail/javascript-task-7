@@ -41,9 +41,8 @@ function runParallel(jobs, parallelNum, timeout = 1000) {
         }
 
         function createJob(createdJob) {
-            let index = counter;
+            let emitFunction = (jobResult) => (runJob(jobResult, counter));
             counter++;
-            let emitFunction = (jobResult) => (runJob(jobResult, index));
             createdJob().then(emitFunction, emitFunction);
         }
     });
