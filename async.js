@@ -29,8 +29,8 @@ function runParallel(jobs, parallelNum, timeout = 1000) {
             .slice(0, parallelNum)
             .forEach((job) => createJob(job));
 
-        function runJob(jobResult) {
-            resultJobs[counter] = jobResult;
+        function runJob(jobResult, index) {
+            resultJobs[index] = jobResult;
             finish++;
             if (timeoutJobs.length > counter) {
                 createJob(jobs[counter]);
@@ -41,8 +41,9 @@ function runParallel(jobs, parallelNum, timeout = 1000) {
         }
 
         function createJob(createdJob) {
-            let emitFunction = (jobResult) => (runJob(jobResult));
+            let index = counter;
             counter++;
+            let emitFunction = (jobResult) => (runJob(jobResult, index));
             createdJob().then(emitFunction, emitFunction);
         }
     });
